@@ -18,23 +18,23 @@ data ElItem
 -- Render an Elisp item as Org lines under a given depth
 elItemToOrg :: Int -> ElItem -> [String]
 elItemToOrg depth (ElDefun h c s b) =
-  [ stars depth ++ " " ++ h
-  , stars (depth+1) ++ " comment"
-  ] ++ block c ++
-  [ stars (depth+1) ++ " type signature"
-  ] ++ block s ++
-  [ stars (depth+1) ++ " code"
-  ] ++ block b
-  where block t = if null t then [] else lines t
+  let sec name txt =
+        if any (not . isSpace) txt
+           then [stars (depth+1) ++ " " ++ name] ++ lines txt
+           else []
+  in  [stars depth ++ " " ++ h]
+      ++ sec "comment"        c
+      ++ sec "type signature" s
+      ++ sec "code"           b
 elItemToOrg depth (ElDefvar h c s b) =
-  [ stars depth ++ " " ++ h
-  , stars (depth+1) ++ " comment"
-  ] ++ block c ++
-  [ stars (depth+1) ++ " type signature"
-  ] ++ block s ++
-  [ stars (depth+1) ++ " code"
-  ] ++ block b
-  where block t = if null t then [] else lines t
+  let sec name txt =
+        if any (not . isSpace) txt
+           then [stars (depth+1) ++ " " ++ name] ++ lines txt
+           else []
+  in  [stars depth ++ " " ++ h]
+      ++ sec "comment"        c
+      ++ sec "type signature" s
+      ++ sec "code"           b
 
 -- Public entry: scan a buffer of Emacs Lisp source for top-level defun/defvar
 extractElispTopLevel :: String -> [ElItem]
@@ -45,9 +45,9 @@ extractElispTopLevel src =
       n      = length src
   in scanTop src ls offs idx2ln n 0 False 0 False 0 0 []
 
---------------------------------------------------------------------------------
+----------------------------------------
 -- Scanner (top-level only; nested fns stay in code, not as headings)
---------------------------------------------------------------------------------
+----------------------------------------
 
 scanTop
   :: String            -- ^ source
@@ -126,9 +126,9 @@ scanTop s ls offs idx2ln n i inLine blockCDepth inStr parenDepth commentNest acc
           | otherwise
             -> scanTop s ls offs idx2ln n (i+1) inLine blockCDepth inStr parenDepth commentNest acc
 
---------------------------------------------------------------------------------
+----------------------------------------
 -- Signatures and slicing
---------------------------------------------------------------------------------
+----------------------------------------
 
 -- defun: signature ends after the close-paren of the arglist.
 -- Returns (sigEndExclusive, postSignatureComments, codeStart)
@@ -161,9 +161,9 @@ endOfTopForm s defStart =
   let (_, jEx) = collectUntilMatch s (defStart+1) 1
   in jEx
 
---------------------------------------------------------------------------------
+----------------------------------------
 -- Preceding comments (lines above), including #| ... |# blocks (may contain blank lines)
---------------------------------------------------------------------------------
+----------------------------------------
 
 gatherPreElispComments :: V.Vector String -> Int -> String
 gatherPreElispComments lvec defLine =
@@ -200,9 +200,9 @@ gatherPreElispComments lvec defLine =
     suffixOfTrim suf s' = suf `elem` tails (dropWhile isSpace s')
     tails xs = case xs of [] -> [[]]; _ -> xs : tails (tail xs)
 
---------------------------------------------------------------------------------
+----------------------------------------
 -- Token/lex helpers (strings, comments, parens)
---------------------------------------------------------------------------------
+----------------------------------------
 
 escaped :: String -> Int -> Bool
 escaped s i =
@@ -323,9 +323,9 @@ collectUntilMatch s p depth
 addSeg :: String -> Int -> Int -> (String, Int) -> (String, Int)
 addSeg s p q (rest, r) = (take (q - p) (drop p s) <> rest, r)
 
---------------------------------------------------------------------------------
+----------------------------------------
 -- Line/offset mapping (for headlines & pre-comments)
---------------------------------------------------------------------------------
+----------------------------------------
 
 lineOffsets :: String -> V.Vector Int
 lineOffsets s = V.fromList (0 : go 0 s)

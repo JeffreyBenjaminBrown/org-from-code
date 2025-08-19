@@ -22,18 +22,22 @@ data RustItem
 -- | Convert a RustItem into Org lines. Caller passes desired heading depth.
 rustItemToOrg :: Int -> RustItem -> [String]
 rustItemToOrg depth (ItemFn h c s b) =
-  [ stars depth ++ " " ++ h
-  , stars (depth+1) ++ " comment"
-  ] ++ block c ++
-  [ stars (depth+1) ++ " type signature"
-  ] ++ block s ++
-  [ stars (depth+1) ++ " code"
-  ] ++ block b
-  where block t = if null t then [] else lines t
+  let d   = depth
+      sec name txt =
+        if any (not . isSpace) txt
+           then [stars (d+1) ++ " " ++ name] ++ lines txt
+           else []
+  in  [stars d ++ " " ++ h]
+      ++ sec "comment"        c
+      ++ sec "type signature" s
+      ++ sec "code"           b
 rustItemToOrg depth (ItemImpl h body) =
-  [ stars depth ++ " " ++ h
-  , stars (depth+1) ++ " code"
-  ] ++ (if null body then [] else lines body)
+  let sec name txt =
+        if any (not . isSpace) txt
+           then [stars (depth+1) ++ " " ++ name] ++ lines txt
+           else []
+  in  [stars depth ++ " " ++ h]
+      ++ sec "code" body
 
 -- | Public entry: extract top-level functions and impl blocks.
 extractRustTopLevel :: String -> [RustItem]
@@ -43,9 +47,9 @@ extractRustTopLevel src =
       idx2ln = indexToLine offs
   in scanTopLevel src ls offs idx2ln
 
---------------------------------------------------------------------------------
+----------------------------------------
 -- Scanning top-level Rust
---------------------------------------------------------------------------------
+----------------------------------------
 
 scanTopLevel :: String -> V.Vector String -> V.Vector Int -> (Int -> Int) -> [RustItem]
 scanTopLevel s ls offs idx2ln = go 0 False 0 False False False 0 []
@@ -105,9 +109,9 @@ scanTopLevel s ls offs idx2ln = go 0 False 0 False False False 0 []
 
           else go (i+1) inLine blockDepth inStr rawStr inChar braceDepth acc
 
---------------------------------------------------------------------------------
+----------------------------------------
 -- Helpers (pure, top-level)
---------------------------------------------------------------------------------
+----------------------------------------
 
 -- | Check if word w begins at position i and is bounded by non-ident chars.
 startsWord :: String -> Int -> String -> Bool

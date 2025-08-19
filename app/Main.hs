@@ -43,15 +43,15 @@ fileTreeToOrgLines (File path) depth = do
   pure (here : subs)
 
 emitSubtreeForFile :: FilePath -> Int -> IO [String]
-emitSubtreeForFile path depth
+emitSubtreeForFile path fileDepth
   | ".rs" `isSuffixOf` path = do
       src <- readFile path
       let items = R.extractRustTopLevel src
-      pure (concatMap (R.rustItemToOrg depth) items)
+      pure (concatMap (R.rustItemToOrg $ fileDepth + 1) items)
   | ".el" `isSuffixOf` path = do
       src <- readFile path
       let items = E.extractElispTopLevel src
-      pure (concatMap (E.elItemToOrg depth) items)
+      pure (concatMap (E.elItemToOrg $ fileDepth + 1) items)
   | otherwise = pure []
 
 addSlash :: FilePath -> FilePath
