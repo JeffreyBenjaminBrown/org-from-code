@@ -8,6 +8,7 @@ import Data.Char (isSpace)
 import Data.List (isSuffixOf)
 import qualified Data.Vector as V
 
+
 -- | Org rendering helpers (simple, no styling).
 stars :: Int -> String
 stars n = replicate (max 1 n) '*'

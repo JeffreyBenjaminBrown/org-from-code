@@ -6,7 +6,9 @@ import Control.Monad    (forM)
 import Data.List        (isSuffixOf)
 
 import Util
+import qualified Elisp as E
 import qualified Rust as R
+
 
 -- | Main for quick testing: writes all-code.org in the CWD.
 main :: IO ()
@@ -40,13 +42,16 @@ fileTreeToOrgLines (File path) depth = do
   subs <- emitSubtreeForFile path depth
   pure (here : subs)
 
--- | For now we only expand Rust files; elisp will be added later.
 emitSubtreeForFile :: FilePath -> Int -> IO [String]
 emitSubtreeForFile path depth
   | ".rs" `isSuffixOf` path = do
       src <- readFile path
       let items = R.extractRustTopLevel src
-      pure (concatMap (R.rustItemToOrg (depth+1)) items)
+      pure (concatMap (R.rustItemToOrg depth) items)
+  | ".el" `isSuffixOf` path = do
+      src <- readFile path
+      let items = E.extractElispTopLevel src
+      pure (concatMap (E.elItemToOrg depth) items)
   | otherwise = pure []
 
 addSlash :: FilePath -> FilePath
