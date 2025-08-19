@@ -30,17 +30,28 @@ generateOrgFromFileTree rootPath = do
 
 -- | Emit Org for the whole tree.
 fileTreeToOrg :: FileTree -> IO String
-fileTreeToOrg t = unlines <$> fileTreeToOrgLines t 1
+fileTreeToOrg t = do
+  base <- getCurrentDirectory
+  unlines <$> fileTreeToOrgLines base t 1
 
-fileTreeToOrgLines :: FileTree -> Int -> IO [String]
-fileTreeToOrgLines (Directory path children) depth = do
-  let here = stars depth ++ " " ++ addSlash path
-  below <- concat <$> mapM (\c -> fileTreeToOrgLines c (depth + 1)) children
-  pure (here : below)
-fileTreeToOrgLines (File path) depth = do
-  let here = stars depth ++ " " ++ path
-  subs <- emitSubtreeForFile path depth
-  pure (here : subs)
+fileTreeToOrgLines :: FilePath -> FileTree -> Int -> IO [String]
+fileTreeToOrgLines base (Directory abspath children) depth = do
+  let prefix  = if "/" `isSuffixOf` base then base else base ++ "/"
+      relpath = if take (length prefix) abspath == prefix
+                   then drop (length prefix) abspath else abspath
+      shown   = if null relpath then "." else relpath
+      here    = stars depth ++ " " ++ "[[./" ++ (shown ++ "/") ++ "]]"
+  below <- let f c = fileTreeToOrgLines base c $ depth + 1
+           in concat <$> mapM f children
+  pure $ here : below
+fileTreeToOrgLines base (File abspath) depth = do
+  let prefix  = if "/" `isSuffixOf` base then base else base ++ "/"
+      relpath = if take (length prefix) abspath == prefix
+                 then drop (length prefix) abspath else abspath
+      shown   = if null relpath then "." else relpath
+      here    = stars depth ++ " " ++ "[[./" ++ shown ++ "]]"
+  subs <- emitSubtreeForFile abspath $ depth + 1
+  pure $ here : subs
 
 emitSubtreeForFile :: FilePath -> Int -> IO [String]
 emitSubtreeForFile path fileDepth
