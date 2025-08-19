@@ -18,7 +18,9 @@ common warnings
 executable org-from-code
     import:           warnings
     main-is:          Main.hs
-    -- other-modules:
+    other-modules:
+      Util,
+      Rust
     -- other-extensions:
     build-depends:    base ^>=4.20.1.0,
                       directory,
