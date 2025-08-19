@@ -14,7 +14,7 @@ import qualified Rust as R
 main :: IO ()
 main = do
   org <- generateOrgFromCurrentDir
-  writeFile "all-code.org" org
+  writeFile "all-definitions.org" org
 
 -- | Entry points
 generateOrgFromCurrentDir :: IO String
